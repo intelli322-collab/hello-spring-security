@@ -11,6 +11,10 @@ import kr.ac.hansung.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import jakarta.validation.Valid;
+import kr.ac.hansung.entity.Product;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/products")
@@ -69,4 +73,34 @@ public class ProductController {
         productService.deleteById(id);
         return "redirect:/products";
     }
+
+    @GetMapping("/{id}/edit")
+    public String editProductForm(@PathVariable Long id, Model model) {
+        Product product = productService.findById(id);
+        // 기존 데이터를 DTO에 담아 폼에 pre-fill
+        ProductDto dto = new ProductDto();
+        dto.setName(product.getName());
+        dto.setPrice(product.getPrice());
+        dto.setStock(product.getStock());
+        dto.setDescription(product.getDescription());
+        model.addAttribute("productDto", dto);
+        model.addAttribute("productId",  id);
+        return "products/edit";
+    }
+
+    @PostMapping("/{id}/edit")
+        public String editProduct(@PathVariable Long id,
+            @Valid @ModelAttribute ProductDto productDto,
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("productId", id);
+            return "products/edit";
+        }
+        productService.updateProduct(id, productDto);
+        ra.addFlashAttribute("successMessage", "상품이 수정되었습니다.");
+        return "redirect:/products";
+    }
+
 }
